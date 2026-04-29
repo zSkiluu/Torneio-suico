@@ -85,6 +85,15 @@
     </div>
 
     <script>
+        setInterval(async () => {
+            try {
+                await fetch('/'); 
+                console.log("Ping enviado: Servidor mantido acordado! ☕");
+            } catch (error) {
+                console.error("Erro ao tentar manter o servidor acordado.", error);
+            }
+        }, 10 * 60 * 1000); // 10 minutos em milissegundos
+
         // --- LÓGICA DO TIMER ---
         let timerInterval;
         let tempoRestante = 0; // em segundos

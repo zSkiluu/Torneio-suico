@@ -48,24 +48,34 @@ def index():
 
 @app.route('/iniciar', methods=['POST'])
 def iniciar_torneio():
-    dados = request.json
-    estado["total_rounds"] = int(dados.get('rounds', 3))
+    dados = request.get_json()
+    print(f"DEBUG: Dados recebidos no servidor: {dados}") # Isso aparecerá nos logs do Render
     
+    estado["total_rounds"] = int(dados.get('rounds', 3))
+    nomes = dados.get('names', [])
+
+    if not nomes or len(nomes) == 0:
+        return jsonify({"erro": "Nenhum nome de jogador foi enviado ou a lista está vazia"}), 400
+
     try:
-        with open('players.txt', 'r', encoding='utf-8') as f:
-            nomes = [linha.strip() for linha in f if linha.strip()]
-    except FileNotFoundError:
-        return jsonify({"erro": "Arquivo players.txt não encontrado"}), 404
+        with open('players.txt', 'w', encoding='utf-8') as f:
+            for nome in nomes:
+                f.write(f"{nome}\n")
+    except Exception as e:
+        print(f"Erro ao salvar arquivo: {e}")
 
-    if not nomes:
-        return jsonify({"erro": "O arquivo players.txt está vazio"}), 400
-
+    
     random.shuffle(nomes)
     players = [Player(i, nome) for i, nome in enumerate(nomes)]
     estado["tournament"] = Tournament(players)
     
+    
     atualizar_snapshot_ranking()
-    return jsonify({"mensagem": "Torneio iniciado", "num_players": len(players)})
+    
+    return jsonify({
+        "mensagem": "Torneio iniciado e nomes salvos", 
+        "num_players": len(players)
+    })
 
 @app.route('/proxima_rodada', methods=['GET'])
 def proxima_rodada():

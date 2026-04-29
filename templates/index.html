@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerenciador de Torneio Suíço</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1, h2, h3 { color: #2c3e50; }
+        
+        button { background-color: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+        button:hover { background-color: #2980b9; }
+        input[type="number"] { padding: 8px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; width: 100px; }
+        
+        .match-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+        select { padding: 5px; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
+        th { background-color: #2c3e50; color: white; }
+        .hidden { display: none !important; }
+
+        /* Estilos do Timer */
+        .timer-card { background: #e8f4fd; border-left: 5px solid #e67e22; text-align: center; }
+        #time-left { font-size: 56px; font-weight: bold; font-family: 'Courier New', Courier, monospace; color: #d35400; display: block; margin: 15px 0; }
+        .btn-warning { background-color: #f39c12; }
+        .btn-warning:hover { background-color: #d68910; }
+        .btn-success { background-color: #27ae60; }
+        .btn-success:hover { background-color: #2ecc71; }
+        .btn-danger { background-color: #e74c3c; }
+        .btn-danger:hover { background-color: #c0392b; }
+        .timer-controls button { margin: 0 5px; }
+    </style>
+</head>
+<body>
+
+    <h1>🏆 Torneio Suíço</h1>
+
+    <div id="setup-section" class="card">
+        <h2>Configuração</h2>
+        <label for="rounds">Número de Rodadas:</label>
+        <input type="number" id="rounds" value="3" min="1">
+        <button onclick="iniciarTorneio()">Iniciar Torneio</button>
+    </div>
+
+    <div id="matches-section" class="card hidden">
+        <h2 id="round-title">Rodada</h2>
+        
+        <div class="card timer-card">
+            <h3 style="margin-top: 0;">⏱️ Tempo da Rodada (minutos)</h3>
+            
+            <div id="timer-setup">
+                <input type="number" id="timer-minutes" value="50" min="1" placeholder="Minutos">
+                <button onclick="iniciarTimer()" class="btn-success">Iniciar Relógio</button>
+            </div>
+            
+            <div id="timer-display" class="hidden">
+                <span id="time-left">00:00</span>
+                <div class="timer-controls">
+                    <button onclick="pausarTimer()" id="btn-pause-timer" class="btn-warning">Pausar</button>
+                    <button onclick="retomarTimer()" id="btn-resume-timer" class="btn-success hidden">Retomar</button>
+                    <button onclick="resetarTimer()" class="btn-danger">Zerar / Ajustar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="matches-container"></div>
+        <button onclick="enviarResultados()" style="width: 100%; margin-top: 20px;">Salvar Resultados e Avançar</button>
+    </div>
+
+    <div id="standings-section" class="card hidden">
+        <h2>Classificação Atual</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Jogador</th>
+                    <th>Pontos</th>
+                    <th>OMW</th>
+                    <th>OOMW</th>
+                    <th>SSRL</th>
+                </tr>
+            </thead>
+            <tbody id="standings-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // --- LÓGICA DO TIMER ---
+        let timerInterval;
+        let tempoRestante = 0; // em segundos
+
+        function iniciarTimer() {
+            const minutos = parseInt(document.getElementById('timer-minutes').value);
+            if (isNaN(minutos) || minutos <= 0) return;
+            
+            tempoRestante = minutos * 60;
+            
+            document.getElementById('timer-setup').classList.add('hidden');
+            document.getElementById('timer-display').classList.remove('hidden');
+            
+            atualizarDisplayTimer();
+            clearInterval(timerInterval);
+            timerInterval = setInterval(tickTimer, 1000);
+            
+            document.getElementById('btn-pause-timer').classList.remove('hidden');
+            document.getElementById('btn-resume-timer').classList.add('hidden');
+        }
+
+        function tickTimer() {
+            if (tempoRestante > 0) {
+                tempoRestante--;
+                atualizarDisplayTimer();
+            } else {
+                clearInterval(timerInterval);
+                document.getElementById('time-left').style.color = "red";
+                alert("O tempo da rodada acabou!");
+            }
+        }
+
+        function atualizarDisplayTimer() {
+            const min = Math.floor(tempoRestante / 60);
+            const sec = tempoRestante % 60;
+            document.getElementById('time-left').innerText = 
+                `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+            document.getElementById('time-left').style.color = "#d35400"; // Reseta cor caso tenha ficado vermelho
+        }
+
+        function pausarTimer() {
+            clearInterval(timerInterval);
+            document.getElementById('btn-pause-timer').classList.add('hidden');
+            document.getElementById('btn-resume-timer').classList.remove('hidden');
+        }
+
+        function retomarTimer() {
+            timerInterval = setInterval(tickTimer, 1000);
+            document.getElementById('btn-pause-timer').classList.remove('hidden');
+            document.getElementById('btn-resume-timer').classList.add('hidden');
+        }
+
+        function resetarTimer() {
+            clearInterval(timerInterval);
+            document.getElementById('timer-setup').classList.remove('hidden');
+            document.getElementById('timer-display').classList.add('hidden');
+        }
+        // -----------------------
+
+        async function iniciarTorneio() {
+            const rounds = document.getElementById('rounds').value;
+            const response = await fetch('/iniciar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rounds: rounds })
+            });
+            const data = await response.json();
+            
+            if (data.erro) {
+                alert(data.erro);
+                return;
+            }
+
+            document.getElementById('setup-section').classList.add('hidden');
+            document.getElementById('standings-section').classList.remove('hidden');
+            carregarProximaRodada();
+        }
+
+        async function carregarProximaRodada() {
+            const response = await fetch('/proxima_rodada');
+            const data = await response.json();
+
+            // Zera o timer automaticamente a cada nova rodada
+            resetarTimer();
+
+            if (data.finalizado) {
+                document.getElementById('matches-section').classList.add('hidden');
+                alert("Torneio finalizado!");
+                atualizarClassificacao();
+                return;
+            }
+
+            document.getElementById('matches-section').classList.remove('hidden');
+            document.getElementById('round-title').innerText = `Rodada ${data.rodada_atual}`;
+            
+            const container = document.getElementById('matches-container');
+            container.innerHTML = '';
+
+            data.partidas.forEach(match => {
+                const row = document.createElement('div');
+                row.className = 'match-row';
+                
+                if (match.is_bye) {
+                    row.innerHTML = `<span><strong>${match.p1}</strong> (BYE)</span>`;
+                } else {
+                    row.innerHTML = `
+                        <span>${match.p1} vs ${match.p2}</span>
+                        <select id="result-${match.id}">
+                            <option value="1">Vitória: ${match.p1}</option>
+                            <option value="2">Vitória: ${match.p2}</option>
+                            <option value="0">Empate / Dupla Derrota</option>
+                        </select>
+                    `;
+                }
+                container.appendChild(row);
+            });
+
+            atualizarClassificacao();
+        }
+
+        async function enviarResultados() {
+            const resultados = [];
+            const matchesDivs = document.querySelectorAll('.match-row');
+            
+            matchesDivs.forEach((row) => {
+                const select = row.querySelector('select');
+                if (select) {
+                    resultados.push(select.value);
+                } else {
+                    resultados.push("1"); 
+                }
+            });
+
+            await fetch('/enviar_resultados', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ resultados: resultados })
+            });
+
+            carregarProximaRodada();
+        }
+
+        async function atualizarClassificacao() {
+            const response = await fetch('/classificacao');
+            const data = await response.json();
+            const tbody = document.getElementById('standings-body');
+            tbody.innerHTML = '';
+
+            data.ranking.forEach((p, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><strong>${p.nome}</strong></td>
+                    <td>${p.pontos}</td>
+                    <td>${p.omw}</td>
+                    <td>${p.oomw}</td>
+                    <td>${p.ssrl}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>

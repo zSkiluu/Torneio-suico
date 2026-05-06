@@ -91,9 +91,65 @@
             </thead>
             <tbody id="standings-body"></tbody>
         </table>
+
+    </div>
+
+    <!-- Área Final do Torneio -->
+    <div id="final-actions" class="card hidden" style="text-align: center; border-left: 5px solid #2c3e50;">
+        <h2>Torneio Finalizado!</h2>
+        <p>A classificação final está definida.</p>
+        <button onclick="resetarTorneio()" class="btn-success" style="width: 100%; font-size: 18px; padding: 15px;">Começar Novo Torneio</button>
     </div>
 
     <script>
+        // Roda essa função assim que o site é aberto ou F5
+        window.onload = async function() {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+
+                if (data.ativo) {
+                    // Esconde a configuração e mostra a classificação
+                    document.getElementById('setup-section').classList.add('hidden');
+                    document.getElementById('standings-section').classList.remove('hidden');
+                    
+                    if (data.finalizado) {
+                        // Se o torneio já acabou, mostra o ranking e o botão de reset
+                        document.getElementById('matches-section').classList.add('hidden');
+                        document.getElementById('final-actions').classList.remove('hidden');
+                        atualizarClassificacao();
+                    } else {
+                        // Se o torneio ainda está rolando, mostra as partidas
+                        document.getElementById('matches-section').classList.remove('hidden');
+                        document.getElementById('round-title').innerText = `Rodada ${data.rodada_atual} (Recuperada)`;
+
+                        const container = document.getElementById('matches-container');
+                        container.innerHTML = '';
+                        data.partidas.forEach(match => {
+                            const row = document.createElement('div');
+                            row.className = 'match-row';
+                            if (match.is_bye) {
+                                row.innerHTML = `<span><strong>${match.p1}</strong> (BYE)</span>`;
+                            } else {
+                                row.innerHTML = `
+                                    <span>${match.p1} vs ${match.p2}</span>
+                                    <select id="result-${match.id}">
+                                        <option value="1">Vitória: ${match.p1}</option>
+                                        <option value="2">Vitória: ${match.p2}</option>
+                                        <option value="0">Empate / Dupla Derrota</option>
+                                    </select>
+                                `;
+                            }
+                            container.appendChild(row);
+                        });
+                        atualizarClassificacao();
+                    }
+                }
+            } catch (err) {
+                console.log("Nenhum torneio ativo ou erro de conexão.");
+            }
+        };
+
         setInterval(async () => {
             try {
                 await fetch('/'); 
@@ -213,6 +269,10 @@
 
             if (data.finalizado) {
                 document.getElementById('matches-section').classList.add('hidden');
+                
+                // --- NOVO: Mostra o botão de reiniciar ---
+                document.getElementById('final-actions').classList.remove('hidden');
+                
                 alert("Torneio finalizado!");
                 atualizarClassificacao();
                 return;
@@ -244,6 +304,32 @@
             });
 
             atualizarClassificacao();
+        }
+
+        async function resetarTorneio() {
+            if(!confirm("Tem certeza que deseja apagar os resultados e voltar para a tela inicial?")) return;
+
+            try {
+                // Avisa o servidor para limpar a memória
+                await fetch('/resetar', { method: 'POST' });
+                
+                // Esconde as áreas do torneio finalizado
+                document.getElementById('standings-section').classList.add('hidden');
+                document.getElementById('final-actions').classList.add('hidden');
+                
+                // Limpa a tabela visualmente
+                document.getElementById('standings-body').innerHTML = '';
+                
+                // Mostra a tela de configuração inicial
+                document.getElementById('setup-section').classList.remove('hidden');
+                
+                // Se quiser que o campo de nomes volte vazio, descomente a linha abaixo:
+                // document.getElementById('player-names').value = '';
+
+                console.log("Sistema resetado. Pronto para um novo torneio!");
+            } catch (err) {
+                console.error("Erro ao resetar o torneio:", err);
+            }
         }
 
         async function enviarResultados() {

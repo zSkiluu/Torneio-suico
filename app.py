@@ -16,7 +16,8 @@ estado = {
     "tournament": None,
     "total_rounds": 0,
     "current_matches": [],
-    "current_ranking": []
+    "current_ranking": [],
+    "finalizado": False
 }
 
 def atualizar_snapshot_ranking():
@@ -48,8 +49,9 @@ def index():
 
 @app.route('/iniciar', methods=['POST'])
 def iniciar_torneio():
+    estado["finalizado"] = False
     dados = request.get_json()
-    print(f"DEBUG: Dados recebidos no servidor: {dados}") # Isso aparecerá nos logs do Render
+    print(f"DEBUG: Dados recebidos no servidor: {dados}")
     
     estado["total_rounds"] = int(dados.get('rounds', 3))
     nomes = dados.get('names', [])
@@ -131,9 +133,47 @@ def enviar_resultados():
     print("\n")
     
     atualizar_snapshot_ranking()
+    
+    if len(estado["tournament"].rounds) >= estado["total_rounds"]:
+        estado["finalizado"] = True
 
     return jsonify({"mensagem": "Resultados aplicados com sucesso"})
 
+@app.route('/resetar', methods=['POST'])
+def resetar_torneio():
+    # Limpa a memória global
+    estado["tournament"] = None
+    estado["total_rounds"] = 0
+    estado["current_matches"] = []
+    estado["ranking_atual"] = []
+    estado["finalizado"] = False
+    
+    return jsonify({"mensagem": "Torneio resetado com sucesso"})
+
+@app.route('/status', methods=['GET'])
+def status_torneio():
+    # Se não tem torneio ou o servidor reiniciou (dormiu)
+    if estado["tournament"] is None:
+        return jsonify({"ativo": False})
+
+    t = estado["tournament"]
+    
+    # Prepara as partidas atuais para devolver ao navegador
+    partidas_json = []
+    for i, m in enumerate(estado["current_matches"]):
+        partidas_json.append({
+            "id": i, 
+            "p1": m.p1.name, 
+            "p2": m.p2.name if m.p2 else "BYE", 
+            "is_bye": m.is_bye()
+        })
+
+    return jsonify({
+        "ativo": True,
+        "finalizado": estado["finalizado"],
+        "rodada_atual": len(t.rounds),
+        "partidas": partidas_json
+    })
 
 @app.route('/classificacao', methods=['GET'])
 def classificacao():

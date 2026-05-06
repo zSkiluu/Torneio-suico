@@ -141,7 +141,7 @@
                     } else {
                         // Se o torneio ainda está rolando, mostra as partidas
                         document.getElementById('matches-section').classList.remove('hidden');
-                        document.getElementById('round-title').innerText = `Rodada ${data.rodada_atual} (Recuperada)`;
+                        document.getElementById('round-title').innerText = `Rodada ${data.rodada_atual}`;
 
                         const container = document.getElementById('matches-container');
                         container.innerHTML = '';
@@ -163,6 +163,7 @@
                             container.appendChild(row);
                         });
                         atualizarClassificacao();
+                        recuperarTimerStorage();
                     }
                 }
             } catch (err) {
@@ -177,18 +178,29 @@
             } catch (error) {
                 console.error("Erro ao tentar manter o servidor acordado.", error);
             }
-        }, 10 * 60 * 1000); // 10 minutos em milissegundos
+        }, 10 * 60 * 100); // 1 minuto em milissegundos
 
         // --- LÓGICA DO TIMER ---
         let timerInterval;
-        let tempoRestante = 0; // em segundos
+        let tempoRestante = 0; 
+        let endTime = null;
+        let isPaused = false;
 
-        function iniciarTimer() {
-            const minutos = parseInt(document.getElementById('timer-minutes').value);
-            if (isNaN(minutos) || minutos <= 0) return;
-            
-            tempoRestante = minutos * 60;
-            
+        function iniciarTimer(isRecuperacao = false) {
+            // Se NÃO for uma recuperação de F5, calcula o tempo inicial
+            if (!isRecuperacao) {
+                const minutos = parseInt(document.getElementById('timer-minutes').value);
+                if (isNaN(minutos) || minutos <= 0) return;
+                
+                tempoRestante = minutos * 60;
+                endTime = Date.now() + (tempoRestante * 1000); // Hora exata que vai acabar
+                
+                // Salva na memória do navegador
+                localStorage.setItem('timerEndTime', endTime.toString());
+                localStorage.setItem('timerPaused', 'false');
+            }
+
+            isPaused = false;
             document.getElementById('timer-setup').classList.add('hidden');
             document.getElementById('timer-display').classList.remove('hidden');
             
@@ -201,13 +213,24 @@
         }
 
         function tickTimer() {
+            if (!isPaused && endTime) {
+                // Calcula o tempo baseado na hora real do relógio do computador
+                tempoRestante = Math.floor((endTime - Date.now()) / 1000);
+            }
+
             if (tempoRestante > 0) {
-                tempoRestante--;
                 atualizarDisplayTimer();
             } else {
+                // Tempo acabou!
                 clearInterval(timerInterval);
+                tempoRestante = 0;
+                atualizarDisplayTimer();
                 document.getElementById('time-left').style.color = "red";
-                alert("O tempo da rodada acabou!");
+                
+                // Limpa o storage ao terminar para não bugar a próxima rodada
+                localStorage.removeItem('timerEndTime');
+                localStorage.removeItem('timerPaused');
+                localStorage.removeItem('timerPausedLeft');
             }
         }
 
@@ -216,16 +239,33 @@
             const sec = tempoRestante % 60;
             document.getElementById('time-left').innerText = 
                 `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-            document.getElementById('time-left').style.color = "#d35400"; // Reseta cor caso tenha ficado vermelho
+            
+            if (tempoRestante > 0) {
+                document.getElementById('time-left').style.color = "#d35400";
+            }
         }
 
         function pausarTimer() {
             clearInterval(timerInterval);
+            isPaused = true;
+            
+            // Salva que está pausado e guarda exatamente quantos segundos restam
+            localStorage.setItem('timerPaused', 'true');
+            localStorage.setItem('timerPausedLeft', tempoRestante.toString());
+            
             document.getElementById('btn-pause-timer').classList.add('hidden');
             document.getElementById('btn-resume-timer').classList.remove('hidden');
         }
 
         function retomarTimer() {
+            isPaused = false;
+            // Recalcula a nova hora de término baseada no tempo que restava
+            endTime = Date.now() + (tempoRestante * 1000);
+            
+            localStorage.setItem('timerEndTime', endTime.toString());
+            localStorage.setItem('timerPaused', 'false');
+            localStorage.removeItem('timerPausedLeft');
+            
             timerInterval = setInterval(tickTimer, 1000);
             document.getElementById('btn-pause-timer').classList.remove('hidden');
             document.getElementById('btn-resume-timer').classList.add('hidden');
@@ -233,8 +273,52 @@
 
         function resetarTimer() {
             clearInterval(timerInterval);
+            endTime = null;
+            isPaused = false;
+            
+            // Limpa a memória do navegador
+            localStorage.removeItem('timerEndTime');
+            localStorage.removeItem('timerPaused');
+            localStorage.removeItem('timerPausedLeft');
+            
             document.getElementById('timer-setup').classList.remove('hidden');
             document.getElementById('timer-display').classList.add('hidden');
+            document.getElementById('time-left').style.color = "#d35400";
+        }
+
+        function recuperarTimerStorage() {
+            const savedEndTime = localStorage.getItem('timerEndTime');
+            const savedPaused = localStorage.getItem('timerPaused') === 'true';
+            const savedPausedLeft = localStorage.getItem('timerPausedLeft');
+
+            if (savedPaused && savedPausedLeft) {
+                // Se o torneio estava pausado na hora do F5
+                tempoRestante = parseInt(savedPausedLeft);
+                isPaused = true;
+                
+                document.getElementById('timer-setup').classList.add('hidden');
+                document.getElementById('timer-display').classList.remove('hidden');
+                atualizarDisplayTimer();
+                
+                document.getElementById('btn-pause-timer').classList.add('hidden');
+                document.getElementById('btn-resume-timer').classList.remove('hidden');
+                
+            } else if (savedEndTime) {
+                // Se estava rodando, recalcula o tempo restante
+                endTime = parseInt(savedEndTime);
+                tempoRestante = Math.floor((endTime - Date.now()) / 1000);
+                
+                if (tempoRestante > 0) {
+                    iniciarTimer(true); // Inicia com o parâmetro "recuperação" = true
+                } else {
+                    // O tempo já tinha acabado enquanto a página estava fechada
+                    tempoRestante = 0;
+                    document.getElementById('timer-setup').classList.add('hidden');
+                    document.getElementById('timer-display').classList.remove('hidden');
+                    atualizarDisplayTimer();
+                    document.getElementById('time-left').style.color = "red";
+                }
+            }
         }
         // -----------------------
 

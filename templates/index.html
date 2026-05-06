@@ -102,6 +102,26 @@
     </div>
 
     <script>
+
+        // --- SISTEMA DE MANTER A TELA LIGADA CELULAR (WAKE LOCK) ---
+        let wakeLock = null;
+
+        async function travarTela() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    
+                    // Se o usuário minimizar o navegador e voltar, pede o bloqueio de novo
+                    document.addEventListener('visibilitychange', async () => {
+                        if (wakeLock !== null && document.visibilityState === 'visible') {
+                            wakeLock = await navigator.wakeLock.request('screen');
+                        }
+                    });
+                } catch (err) {
+                    console.error('Erro no Wake Lock:', err.name, err.message);
+                }
+            }
+        }
         // Roda essa função assim que o site é aberto ou F5
         window.onload = async function() {
             try {
@@ -219,6 +239,7 @@
         // -----------------------
 
     async function iniciarTorneio() {
+    travarTela();
     const rounds = document.getElementById('rounds').value;
     const namesText = document.getElementById('player-names').value;
 
@@ -323,7 +344,7 @@
                 // Mostra a tela de configuração inicial
                 document.getElementById('setup-section').classList.remove('hidden');
                 
-                // Se quiser que o campo de nomes volte vazio, descomente a linha abaixo:
+                // Campo de nomes volte vazio, descomente a linha abaixo:
                 // document.getElementById('player-names').value = '';
 
                 console.log("Sistema resetado. Pronto para um novo torneio!");

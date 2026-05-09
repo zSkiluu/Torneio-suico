@@ -55,11 +55,10 @@
         <h2 id="round-title">Rodada</h2>
         
         <div class="card timer-card">
-            <h3 style="margin-top: 0;">⏱️ Tempo da Rodada (minutos)</h3>
+            <h3 style="margin-top: 0;"></h3>
             
             <div id="timer-setup">
-                <input type="number" id="timer-minutes" value="50" min="1" placeholder="Minutos">
-                <button onclick="iniciarTimer()" class="btn-success">Iniciar Relógio</button>
+                <button onclick="iniciarTimer()" class="btn-success" style="font-size: 18px; padding: 12px 24px;">Iniciar Relógio</button>
             </div>
             
             <div id="timer-display" class="hidden">
@@ -189,8 +188,7 @@
         function iniciarTimer(isRecuperacao = false) {
             // Se NÃO for uma recuperação de F5, calcula o tempo inicial
             if (!isRecuperacao) {
-                const minutos = parseInt(document.getElementById('timer-minutes').value);
-                if (isNaN(minutos) || minutos <= 0) return;
+                const minutos = 50; // Tempo travado em 50 minutos
                 
                 tempoRestante = minutos * 60;
                 endTime = Date.now() + (tempoRestante * 1000); // Hora exata que vai acabar

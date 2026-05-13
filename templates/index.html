@@ -29,26 +29,64 @@
         .btn-danger { background-color: #e74c3c; }
         .btn-danger:hover { background-color: #c0392b; }
         .timer-controls button { margin: 0 5px; }
+
+        /* Botão Voltar Rodada */
+        .btn-voltar {
+            background-color: #8e44ad;
+            width: 100%;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-voltar:hover { background-color: #6c3483; }
+        .btn-voltar:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Toast de confirmação */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c3e50;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            opacity: 0;
+            transition: opacity 0.4s;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        #toast.show { opacity: 1; }
     </style>
 </head>
 <body>
 
     <h1>🏆 Torneio Suíço</h1>
 
+    <!-- Toast de notificação -->
+    <div id="toast"></div>
+
     <div id="setup-section" class="card">
-    <h2>Configuração do Torneio</h2>
-    
-    <div style="margin-bottom: 15px;">
-        <label for="rounds" style="display: block; margin-bottom: 5px;">Número de Rodadas:</label>
-        <input type="number" id="rounds" value="3" min="1">
-    </div>
+        <h2>Configuração do Torneio</h2>
+        
+        <div style="margin-bottom: 15px;">
+            <label for="rounds" style="display: block; margin-bottom: 5px;">Número de Rodadas:</label>
+            <input type="number" id="rounds" value="3" min="1">
+        </div>
 
-    <div style="margin-bottom: 15px;">
-        <label for="player-names" style="display: block; margin-bottom: 5px;">Nomes dos Jogadores (um por linha):</label>
-        <textarea id="player-names" rows="10" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;" ></textarea>
-    </div>
+        <div style="margin-bottom: 15px;">
+            <label for="player-names" style="display: block; margin-bottom: 5px;">Nomes dos Jogadores (um por linha):</label>
+            <textarea id="player-names" rows="10" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;"></textarea>
+        </div>
 
-    <button onclick="iniciarTorneio()" style="width: 100%;">Iniciar Torneio</button>
+        <button onclick="iniciarTorneio()" style="width: 100%;">Iniciar Torneio</button>
     </div>
 
     <div id="matches-section" class="card hidden">
@@ -72,7 +110,13 @@
         </div>
 
         <div id="matches-container"></div>
+
         <button onclick="enviarResultados()" style="width: 100%; margin-top: 20px;">Salvar Resultados e Avançar</button>
+
+        <!-- Botão Voltar Rodada -->
+        <button id="btn-voltar-rodada" class="btn-voltar" onclick="voltarRodada()" disabled>
+            Voltar à Rodada Anterior
+        </button>
     </div>
 
     <div id="standings-section" class="card hidden">
@@ -90,7 +134,6 @@
             </thead>
             <tbody id="standings-body"></tbody>
         </table>
-
     </div>
 
     <!-- Área Final do Torneio -->
@@ -102,15 +145,13 @@
 
     <script>
 
-        // --- SISTEMA DE MANTER A TELA LIGADA CELULAR (WAKE LOCK) ---
+        // --- WAKE LOCK ---
         let wakeLock = null;
 
         async function travarTela() {
             if ('wakeLock' in navigator) {
                 try {
                     wakeLock = await navigator.wakeLock.request('screen');
-                    
-                    // Se o usuário minimizar o navegador e voltar, pede o bloqueio de novo
                     document.addEventListener('visibilitychange', async () => {
                         if (wakeLock !== null && document.visibilityState === 'visible') {
                             wakeLock = await navigator.wakeLock.request('screen');
@@ -121,24 +162,36 @@
                 }
             }
         }
-        // Roda essa função assim que o site é aberto ou F5
+
+        // --- TOAST ---
+        function mostrarToast(msg, duracao = 3000) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), duracao);
+        }
+
+        // --- ESTADO DO BOTÃO VOLTAR ---
+        function atualizarBotaoVoltar(podeVoltar) {
+            const btn = document.getElementById('btn-voltar-rodada');
+            btn.disabled = !podeVoltar;
+        }
+
+        // --- ON LOAD ---
         window.onload = async function() {
             try {
                 const response = await fetch('/status');
                 const data = await response.json();
 
                 if (data.ativo) {
-                    // Esconde a configuração e mostra a classificação
                     document.getElementById('setup-section').classList.add('hidden');
                     document.getElementById('standings-section').classList.remove('hidden');
                     
                     if (data.finalizado) {
-                        // Se o torneio já acabou, mostra o ranking e o botão de reset
                         document.getElementById('matches-section').classList.add('hidden');
                         document.getElementById('final-actions').classList.remove('hidden');
                         atualizarClassificacao();
                     } else {
-                        // Se o torneio ainda está rolando, mostra as partidas
                         document.getElementById('matches-section').classList.remove('hidden');
                         document.getElementById('round-title').innerText = `Rodada ${data.rodada_atual}`;
 
@@ -161,6 +214,8 @@
                             }
                             container.appendChild(row);
                         });
+
+                        atualizarBotaoVoltar(data.pode_voltar ?? false);
                         atualizarClassificacao();
                         recuperarTimerStorage();
                     }
@@ -172,28 +227,24 @@
 
         setInterval(async () => {
             try {
-                await fetch('/'); 
+                await fetch('/');
                 console.log("Ping enviado: Servidor mantido acordado! ☕");
             } catch (error) {
                 console.error("Erro ao tentar manter o servidor acordado.", error);
             }
-        }, 10 * 60 * 100); // 1 minuto em milissegundos
+        }, 10 * 60 * 100);
 
-        // --- LÓGICA DO TIMER ---
+        // --- TIMER ---
         let timerInterval;
         let tempoRestante = 0; 
         let endTime = null;
         let isPaused = false;
 
         function iniciarTimer(isRecuperacao = false) {
-            // Se NÃO for uma recuperação de F5, calcula o tempo inicial
             if (!isRecuperacao) {
-                const minutos = 50; // Tempo travado em 50 minutos
-                
+                const minutos = 50;
                 tempoRestante = minutos * 60;
-                endTime = Date.now() + (tempoRestante * 1000); // Hora exata que vai acabar
-                
-                // Salva na memória do navegador
+                endTime = Date.now() + (tempoRestante * 1000);
                 localStorage.setItem('timerEndTime', endTime.toString());
                 localStorage.setItem('timerPaused', 'false');
             }
@@ -212,20 +263,16 @@
 
         function tickTimer() {
             if (!isPaused && endTime) {
-                // Calcula o tempo baseado na hora real do relógio do computador
                 tempoRestante = Math.floor((endTime - Date.now()) / 1000);
             }
 
             if (tempoRestante > 0) {
                 atualizarDisplayTimer();
             } else {
-                // Tempo acabou!
                 clearInterval(timerInterval);
                 tempoRestante = 0;
                 atualizarDisplayTimer();
                 document.getElementById('time-left').style.color = "red";
-                
-                // Limpa o storage ao terminar para não bugar a próxima rodada
                 localStorage.removeItem('timerEndTime');
                 localStorage.removeItem('timerPaused');
                 localStorage.removeItem('timerPausedLeft');
@@ -237,7 +284,6 @@
             const sec = tempoRestante % 60;
             document.getElementById('time-left').innerText = 
                 `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-            
             if (tempoRestante > 0) {
                 document.getElementById('time-left').style.color = "#d35400";
             }
@@ -246,24 +292,18 @@
         function pausarTimer() {
             clearInterval(timerInterval);
             isPaused = true;
-            
-            // Salva que está pausado e guarda exatamente quantos segundos restam
             localStorage.setItem('timerPaused', 'true');
             localStorage.setItem('timerPausedLeft', tempoRestante.toString());
-            
             document.getElementById('btn-pause-timer').classList.add('hidden');
             document.getElementById('btn-resume-timer').classList.remove('hidden');
         }
 
         function retomarTimer() {
             isPaused = false;
-            // Recalcula a nova hora de término baseada no tempo que restava
             endTime = Date.now() + (tempoRestante * 1000);
-            
             localStorage.setItem('timerEndTime', endTime.toString());
             localStorage.setItem('timerPaused', 'false');
             localStorage.removeItem('timerPausedLeft');
-            
             timerInterval = setInterval(tickTimer, 1000);
             document.getElementById('btn-pause-timer').classList.remove('hidden');
             document.getElementById('btn-resume-timer').classList.add('hidden');
@@ -273,12 +313,9 @@
             clearInterval(timerInterval);
             endTime = null;
             isPaused = false;
-            
-            // Limpa a memória do navegador
             localStorage.removeItem('timerEndTime');
             localStorage.removeItem('timerPaused');
             localStorage.removeItem('timerPausedLeft');
-            
             document.getElementById('timer-setup').classList.remove('hidden');
             document.getElementById('timer-display').classList.add('hidden');
             document.getElementById('time-left').style.color = "#d35400";
@@ -290,26 +327,19 @@
             const savedPausedLeft = localStorage.getItem('timerPausedLeft');
 
             if (savedPaused && savedPausedLeft) {
-                // Se o torneio estava pausado na hora do F5
                 tempoRestante = parseInt(savedPausedLeft);
                 isPaused = true;
-                
                 document.getElementById('timer-setup').classList.add('hidden');
                 document.getElementById('timer-display').classList.remove('hidden');
                 atualizarDisplayTimer();
-                
                 document.getElementById('btn-pause-timer').classList.add('hidden');
                 document.getElementById('btn-resume-timer').classList.remove('hidden');
-                
             } else if (savedEndTime) {
-                // Se estava rodando, recalcula o tempo restante
                 endTime = parseInt(savedEndTime);
                 tempoRestante = Math.floor((endTime - Date.now()) / 1000);
-                
                 if (tempoRestante > 0) {
-                    iniciarTimer(true); // Inicia com o parâmetro "recuperação" = true
+                    iniciarTimer(true);
                 } else {
-                    // O tempo já tinha acabado enquanto a página estava fechada
                     tempoRestante = 0;
                     document.getElementById('timer-setup').classList.add('hidden');
                     document.getElementById('timer-display').classList.remove('hidden');
@@ -318,65 +348,50 @@
                 }
             }
         }
-        // -----------------------
 
-    async function iniciarTorneio() {
-    travarTela();
-    const rounds = document.getElementById('rounds').value;
-    const namesText = document.getElementById('player-names').value;
+        // --- TORNEIO ---
 
-    const namesArray = namesText.split(/\r?\n/)
-        .map(n => n.replace(/[\u200B-\u200D\uFEFF\u2060]/g, "").trim()) 
-        .filter(n => n !== "");
+        async function iniciarTorneio() {
+            travarTela();
+            const rounds = document.getElementById('rounds').value;
+            const namesText = document.getElementById('player-names').value;
 
-    console.log("Dados que serão enviados:", { rounds, names: namesArray });
+            const namesArray = namesText.split(/\r?\n/)
+                .map(n => n.replace(/[\u200B-\u200D\uFEFF\u2060]/g, "").trim())
+                .filter(n => n !== "");
 
-    if (namesArray.length === 0) {
-        alert("Por favor, insira ao menos um nome de jogador.");
-        return;
-    }
+            if (namesArray.length === 0) {
+                alert("Por favor, insira ao menos um nome de jogador.");
+                return;
+            }
 
-    try {
-        const response = await fetch('/iniciar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                rounds: rounds,
-                names: namesArray 
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.erro) {
-            alert("Erro do Servidor: " + data.erro);
-            return;
+            try {
+                const response = await fetch('/iniciar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rounds, names: namesArray })
+                });
+                
+                const data = await response.json();
+                if (data.erro) { alert("Erro do Servidor: " + data.erro); return; }
+
+                document.getElementById('setup-section').classList.add('hidden');
+                document.getElementById('standings-section').classList.remove('hidden');
+                carregarProximaRodada();
+            } catch (err) {
+                alert("Erro ao conectar com o servidor.");
+            }
         }
-
-        document.getElementById('setup-section').classList.add('hidden');
-        document.getElementById('standings-section').classList.remove('hidden');
-        carregarProximaRodada();
-    } catch (err) {
-        console.error("Erro na requisição:", err);
-        alert("Erro ao conectar com o servidor.");
-    }
-}
-
 
         async function carregarProximaRodada() {
             const response = await fetch('/proxima_rodada');
             const data = await response.json();
 
-            // Zera o timer automaticamente a cada nova rodada
             resetarTimer();
 
             if (data.finalizado) {
                 document.getElementById('matches-section').classList.add('hidden');
-                
-                // --- NOVO: Mostra o botão de reiniciar ---
                 document.getElementById('final-actions').classList.remove('hidden');
-                
-                alert("Torneio finalizado!");
                 atualizarClassificacao();
                 return;
             }
@@ -390,7 +405,6 @@
             data.partidas.forEach(match => {
                 const row = document.createElement('div');
                 row.className = 'match-row';
-                
                 if (match.is_bye) {
                     row.innerHTML = `<span><strong>${match.p1}</strong> (BYE)</span>`;
                 } else {
@@ -406,55 +420,75 @@
                 container.appendChild(row);
             });
 
+            // Consulta /status para saber se pode voltar
+            const statusResp = await fetch('/status');
+            const statusData = await statusResp.json();
+            atualizarBotaoVoltar(statusData.pode_voltar ?? false);
+
             atualizarClassificacao();
-        }
-
-        async function resetarTorneio() {
-            if(!confirm("Tem certeza que deseja apagar os resultados e voltar para a tela inicial?")) return;
-
-            try {
-                // Avisa o servidor para limpar a memória
-                await fetch('/resetar', { method: 'POST' });
-                
-                // Esconde as áreas do torneio finalizado
-                document.getElementById('standings-section').classList.add('hidden');
-                document.getElementById('final-actions').classList.add('hidden');
-                
-                // Limpa a tabela visualmente
-                document.getElementById('standings-body').innerHTML = '';
-                
-                // Mostra a tela de configuração inicial
-                document.getElementById('setup-section').classList.remove('hidden');
-                
-                // Campo de nomes volte vazio, descomente a linha abaixo:
-                // document.getElementById('player-names').value = '';
-
-                console.log("Sistema resetado. Pronto para um novo torneio!");
-            } catch (err) {
-                console.error("Erro ao resetar o torneio:", err);
-            }
         }
 
         async function enviarResultados() {
             const resultados = [];
-            const matchesDivs = document.querySelectorAll('.match-row');
-            
-            matchesDivs.forEach((row) => {
+            document.querySelectorAll('.match-row').forEach(row => {
                 const select = row.querySelector('select');
-                if (select) {
-                    resultados.push(select.value);
-                } else {
-                    resultados.push("1"); 
-                }
+                resultados.push(select ? select.value : "1");
             });
 
             await fetch('/enviar_resultados', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ resultados: resultados })
+                body: JSON.stringify({ resultados })
             });
 
             carregarProximaRodada();
+        }
+
+        async function voltarRodada() {
+            if (!confirm("Tem certeza que deseja voltar à rodada anterior? Os resultados da rodada atual serão apagados.")) return;
+
+            const btn = document.getElementById('btn-voltar-rodada');
+            btn.disabled = true;
+            btn.innerText = "Revertendo...";
+
+            try {
+                const response = await fetch('/voltar_rodada', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.erro) {
+                    alert("Erro: " + data.erro);
+                    btn.disabled = false;
+                    btn.innerHTML = "Voltar à Rodada Anterior";
+                    return;
+                }
+
+                mostrarToast(` ${data.mensagem}`);
+
+                btn.innerHTML = "Voltar à Rodada Anterior";
+
+                // Recarrega os pairings da rodada que foi desfeita
+                await carregarProximaRodada();
+
+            } catch (err) {
+                alert("Erro ao conectar com o servidor.");
+                btn.disabled = false;
+                btn.innerHTML = "Voltar à Rodada Anterior";
+            }
+        }
+
+        async function resetarTorneio() {
+            if (!confirm("Tem certeza que deseja apagar os resultados e voltar para a tela inicial?")) return;
+
+            try {
+                await fetch('/resetar', { method: 'POST' });
+                document.getElementById('standings-section').classList.add('hidden');
+                document.getElementById('final-actions').classList.add('hidden');
+                document.getElementById('matches-section').classList.add('hidden');
+                document.getElementById('standings-body').innerHTML = '';
+                document.getElementById('setup-section').classList.remove('hidden');
+            } catch (err) {
+                console.error("Erro ao resetar o torneio:", err);
+            }
         }
 
         async function atualizarClassificacao() {

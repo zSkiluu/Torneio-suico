@@ -270,6 +270,7 @@ def voltar_rodada():
     atualizar_snapshot_ranking()
 
     return jsonify({
+        "mensagem": f"Rodada {rodada_revertida} revertida com sucesso",
         "rodada_atual": len(t.rounds),
         "ranking": estado["ranking_atual"],
     })

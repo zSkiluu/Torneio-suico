@@ -115,7 +115,7 @@
 
         <!-- Botão Voltar Rodada -->
         <button id="btn-voltar-rodada" class="btn-voltar" onclick="voltarRodada()" disabled>
-            Voltar à Rodada Anterior
+            ↩ Voltar à Rodada Anterior
         </button>
     </div>
 
@@ -445,7 +445,6 @@
         }
 
         async function voltarRodada() {
-            if (!confirm("Tem certeza que deseja voltar à rodada anterior? Os resultados da rodada atual serão apagados.")) return;
 
             const btn = document.getElementById('btn-voltar-rodada');
             btn.disabled = true;
@@ -458,13 +457,11 @@
                 if (data.erro) {
                     alert("Erro: " + data.erro);
                     btn.disabled = false;
-                    btn.innerHTML = "Voltar à Rodada Anterior";
+                    btn.innerHTML = "↩ Voltar à Rodada Anterior";
                     return;
                 }
 
-                mostrarToast(` ${data.mensagem}`);
-
-                btn.innerHTML = "Voltar à Rodada Anterior";
+                btn.innerHTML = "↩ Voltar à Rodada Anterior";
 
                 // Recarrega os pairings da rodada que foi desfeita
                 await carregarProximaRodada();
@@ -472,7 +469,7 @@
             } catch (err) {
                 alert("Erro ao conectar com o servidor.");
                 btn.disabled = false;
-                btn.innerHTML = "Voltar à Rodada Anterior";
+                btn.innerHTML = "↩ Voltar à Rodada Anterior";
             }
         }
 

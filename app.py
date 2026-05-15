@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-import random
+import random, os
 
 from models.player import Player
 from models.tournament import Tournament
@@ -19,7 +19,7 @@ estado = {
     "finalizado": False,
     "historico_rodadas": [],
     "historico_rankings": [],
-    "player_snapshots": [],
+    "player_snapshot": None, #Só guarda a rodada imediatamente anterior
 }
 
 
@@ -45,35 +45,22 @@ def snapshot_ranking(t):
     ]
 
 
-def atualizar_snapshot_ranking():
-    t = estado["tournament"]
-    if t:
-        estado["ranking_atual"] = snapshot_ranking(t)
-
 
 def salvar_player_snapshot(rodada_num):
-    """
-    Captura o estado completo de cada jogador ANTES de aplicar os resultados
-    da rodada. Também salva quantas rounds já existiam em t.rounds neste momento,
-    para que possamos apará-las corretamente no rollback.
-    """
     t = estado["tournament"]
-    players_state = []
-    for p in t.players:
-        players_state.append({
-            "id": p.id,
-            "points": p.points,
-            "opponent_ids": [op.id for op in p.opponents],
-            "bye_count": getattr(p, "bye_count", 0),
-        })
-
-    estado["player_snapshots"].append({
+    estado["player_snapshot"] = {
         "rodada": rodada_num,
-        "players": players_state,
-        # Quantas rounds existiam ANTES desta ser aberta
-        # (start_new_round já foi chamado, então subtraímos 1)
+        "players": [
+            {
+                "id": p.id,
+                "points": p.points,
+                "opponent_ids": [op.id for op in p.opponents],
+                "bye_count": getattr(p, "bye_count", 0),
+            }
+            for p in t.players
+        ],
         "num_rounds_antes": len(t.rounds) - 1,
-    })
+    }
 
 
 def restaurar_player_snapshot(snap):
@@ -106,7 +93,7 @@ def iniciar_torneio():
     estado["finalizado"] = False
     estado["historico_rodadas"] = []
     estado["historico_rankings"] = []
-    estado["player_snapshots"] = []
+    estado["player_snapshot"] = None
 
     dados = request.get_json()
     print(f"DEBUG: Dados recebidos no servidor: {dados}")
@@ -127,8 +114,7 @@ def iniciar_torneio():
     random.shuffle(nomes)
     players = [Player(i, nome) for i, nome in enumerate(nomes)]
     estado["tournament"] = Tournament(players)
-
-    atualizar_snapshot_ranking()
+    estado["ranking_atual"] = snapshot_ranking(estado["tournament"])
 
     return jsonify({
         "mensagem": "Torneio iniciado e nomes salvos",
@@ -174,6 +160,7 @@ def proxima_rodada():
     return jsonify({
         "rodada_atual": rodada_num,
         "partidas": partidas_json,
+        "pode_voltar": estado["player_snapshot"] is not None,
     })
 
 
@@ -237,43 +224,28 @@ def enviar_resultados():
 
 @app.route('/voltar_rodada', methods=['POST'])
 def voltar_rodada():
-    """
-    Desfaz a última rodada encerrada, restaurando pontos, oponentes e
-    histórico de rounds ao estado anterior à aplicação dos resultados.
-    Após o rollback o front-end pode chamar /proxima_rodada para
-    recriar os pairings daquela rodada e inserir novos resultados.
-    """
     t = estado["tournament"]
 
     if not t:
         return jsonify({"erro": "Nenhum torneio ativo"}), 400
 
-    if not estado["player_snapshots"]:
-        return jsonify({"erro": "Não há rodada anterior para voltar"}), 400
+    if estado["player_snapshot"] is None:
+        return jsonify({"erro": "Não é possível voltar mais de uma rodada seguida"}), 400
 
-    snap = estado["player_snapshots"].pop()
+    snap = estado["player_snapshot"]
+    estado["player_snapshot"] = None   # consome o slot — bloqueia nova tentativa imediata
     rodada_revertida = snap["rodada"]
 
     restaurar_player_snapshot(snap)
 
-    # Remove entradas do histórico visual referentes à rodada revertida
-    estado["historico_rodadas"] = [
-        r for r in estado["historico_rodadas"] if r["rodada"] != rodada_revertida
-    ]
-    estado["historico_rankings"] = [
-        r for r in estado["historico_rankings"] if r["rodada"] != rodada_revertida
-    ]
-
+    estado["historico_rodadas"] = [r for r in estado["historico_rodadas"] if r["rodada"] != rodada_revertida]
+    estado["historico_rankings"] = [r for r in estado["historico_rankings"] if r["rodada"] != rodada_revertida]
     estado["current_matches"] = []
     estado["finalizado"] = False
 
-    atualizar_snapshot_ranking()
+    estado["ranking_atual"] = snapshot_ranking(t)
 
-    return jsonify({
-        "mensagem": f"Rodada {rodada_revertida} revertida com sucesso",
-        "rodada_atual": len(t.rounds),
-        "ranking": estado["ranking_atual"],
-    })
+    return jsonify({"rodada_atual": len(t.rounds)})
 
 
 @app.route('/resetar', methods=['POST'])
@@ -285,8 +257,14 @@ def resetar_torneio():
     estado["finalizado"] = False
     estado["historico_rodadas"] = []
     estado["historico_rankings"] = []
-    estado["player_snapshots"] = []
-
+    estado["player_snapshot"] = None
+    
+    try:
+        with open('players.txt', 'w', encoding='utf-8') as f:
+            pass
+    except Exception as e:
+        print(f"Log: Erro ao tentar esvaziar o arquivo players.txt: {e}")
+    
     return jsonify({"mensagem": "Torneio resetado com sucesso"})
 
 
@@ -312,7 +290,7 @@ def status_torneio():
         "finalizado": estado["finalizado"],
         "rodada_atual": len(t.rounds),
         "total_rounds": estado["total_rounds"],
-        "pode_voltar": len(estado["player_snapshots"]) > 0,
+        "pode_voltar": estado["player_snapshot"] is not None,
         "partidas": partidas_json,
     })
 

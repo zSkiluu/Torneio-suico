@@ -24,8 +24,8 @@
         #time-left { font-size: 56px; font-weight: bold; font-family: 'Courier New', Courier, monospace; color: #d35400; display: block; margin: 15px 0; }
         .btn-warning { background-color: #f39c12; }
         .btn-warning:hover { background-color: #d68910; }
-        .btn-success { background-color: #27ae60; }
-        .btn-success:hover { background-color: #2ecc71; }
+        .btn-success { background-color: #3498db; }
+        .btn-success:hover { background-color: #2980b9; }
         .btn-danger { background-color: #e74c3c; }
         .btn-danger:hover { background-color: #c0392b; }
         .timer-controls button { margin: 0 5px; }
@@ -78,7 +78,7 @@
         
         <div style="margin-bottom: 15px;">
             <label for="rounds" style="display: block; margin-bottom: 5px;">Número de Rodadas:</label>
-            <input type="number" id="rounds" value="3" min="1">
+            <input type="number" id="rounds" value="0" readonly style="background-color: #e9ecef; cursor: not-allowed; color: #555; border: 1px solid #ccc; padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box;">
         </div>
 
         <div style="margin-bottom: 15px;">
@@ -96,7 +96,7 @@
             <h3 style="margin-top: 0;"></h3>
             
             <div id="timer-setup">
-                <button onclick="iniciarTimer()" class="btn-success" style="font-size: 18px; padding: 12px 24px;">Iniciar Relógio</button>
+                <button onclick="iniciarTimer()" class="btn-success" style="font-size: 18px; padding: 12px 20px;">Iniciar Relógio</button>
             </div>
             
             <div id="timer-display" class="hidden">
@@ -115,7 +115,7 @@
 
         <!-- Botão Voltar Rodada -->
         <button id="btn-voltar-rodada" class="btn-voltar" onclick="voltarRodada()" disabled>
-            ↩ Voltar à Rodada Anterior
+            Voltar à Rodada Anterior
         </button>
     </div>
 
@@ -457,11 +457,11 @@
                 if (data.erro) {
                     alert("Erro: " + data.erro);
                     btn.disabled = false;
-                    btn.innerHTML = "↩ Voltar à Rodada Anterior";
+                    btn.innerHTML = "Voltar à Rodada Anterior";
                     return;
                 }
 
-                btn.innerHTML = "↩ Voltar à Rodada Anterior";
+                btn.innerHTML = "Voltar à Rodada Anterior";
 
                 // Recarrega os pairings da rodada que foi desfeita
                 await carregarProximaRodada();
@@ -469,22 +469,40 @@
             } catch (err) {
                 alert("Erro ao conectar com o servidor.");
                 btn.disabled = false;
-                btn.innerHTML = "↩ Voltar à Rodada Anterior";
+                btn.innerHTML = "Voltar à Rodada Anterior";
             }
         }
 
         async function resetarTorneio() {
-            if (!confirm("Tem certeza que deseja apagar os resultados e voltar para a tela inicial?")) return;
+            if(!confirm("Tem certeza que deseja apagar os resultados e voltar para a tela inicial?")) return;
 
             try {
+                // Avisa o servidor para limpar a memória
                 await fetch('/resetar', { method: 'POST' });
+                
+                // Esconde as áreas do torneio finalizado
                 document.getElementById('standings-section').classList.add('hidden');
                 document.getElementById('final-actions').classList.add('hidden');
-                document.getElementById('matches-section').classList.add('hidden');
+                
+                // Limpa a tabela visualmente
                 document.getElementById('standings-body').innerHTML = '';
+                
+                // Mostra a tela de configuração inicial
                 document.getElementById('setup-section').classList.remove('hidden');
+                
+                // Limpa o campo de nomes e os cálculos automáticos ---
+                document.getElementById('player-names').value = '';
+                document.getElementById('rounds').value = 0;
+                
+                const helperText = document.getElementById('rounds-helper');
+                if (helperText) {
+                    helperText.innerText = "Digite os nomes para calcular a quantidade de rodadas.";
+                    helperText.style.color = "#7f8c8d";
+                }
+                // --------------------------------------------------------------
+
             } catch (err) {
-                console.error("Erro ao resetar o torneio:", err);
+                
             }
         }
 
@@ -507,6 +525,30 @@
                 tbody.appendChild(tr);
             });
         }
+
+    // Calcula o máximo de rodadas
+        document.getElementById('player-names').addEventListener('input', function() {
+            const namesText = this.value;
+            const namesArray = namesText.split(/\r?\n/)
+                .map(n => n.replace(/[\u200B-\u200D\uFEFF\u2060]/g, "").trim()) 
+                .filter(n => n !== "");
+            
+            const numPlayers = namesArray.length;
+            const roundsInput = document.getElementById('rounds');
+
+            if (numPlayers > 1) {
+                // Matemática do Sistema Suíço: Teto de Log2(Jogadores)
+                const idealRounds = Math.ceil(Math.log2(numPlayers));
+                
+                // Define o máximo permitido
+                roundsInput.max = idealRounds;
+                
+                // Sugere o número ideal preenchendo o campo sozinho
+                roundsInput.value = idealRounds; 
+                
+            }
+        });
+    // ----------------------------------------
     </script>
 </body>
 </html>

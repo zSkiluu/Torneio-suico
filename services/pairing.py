@@ -44,6 +44,30 @@ def try_pairing(group):
 
     return None
 
+def global_try_pairing(players):
+    if not players:
+        return []
+
+    p1 = players[0]
+    rest_base = players[1:]
+
+    for i, p2 in enumerate(rest_base):
+        if not can_play(p1, p2):
+            continue
+
+        # Cria a nova sub-lista excluindo p1 (já fora) e p2 (índice i)
+        rest = rest_base[:i] + rest_base[i + 1:]
+        
+        # Tenta resolver o restante da chave
+        result = global_try_pairing(rest)
+
+        # Se retornou uma lista válida, caminho perfeito
+        if result is not None:
+            return [(p1, p2)] + result
+
+    # Falhou em encontrar adversário válido para p1 nesta ramificação
+    return None
+
 def group_by_score(players):
     groups = defaultdict(list)
     for p in players:
@@ -60,7 +84,7 @@ def pair_group(group):
     if pairing:
         return pairing
 
-    # fallback guloso
+    # fallback
     pairs = []
     used = set()
 
@@ -73,42 +97,42 @@ def pair_group(group):
                 used.add(p1)
                 used.add(p2)
                 break
+            
+    leftover = [p for p in group if p not in used]
+    if leftover:
+        # ordena por pontuação para ao menos criar confrontos razoáveis
+        while len(leftover) >= 2:
+            p1 = leftover.pop(0)
+            p2 = leftover.pop(0)
+            pairs.append((p1, p2))
+
+        if leftover:
+            # número ímpar após tudo: float down ou bye tratado pelo caller
+            pairs.append((leftover[0], None))
 
     return pairs
 
 
 def swiss_pairing(tournament):
-    players = tournament.players
+    players = list(tournament.players)
 
-    # calcula tiebreakers apenas uma vez
     cache = build_tiebreaker(players, tournament)
-
     ranked = rank_players(players, cache)
-    groups = group_by_score(ranked)
 
     matches = []
-    float_down = None
-    unpaired = []
+    bye_player = None
 
-    for score in sorted(groups.keys(), reverse=True):
-        group = list(groups[score])
+    if len(ranked) % 2 == 1:
+        bye_player = assign_bye(ranked)
 
-        if float_down:
-            group.append(float_down)
-            float_down = None
+    pairing_result = global_try_pairing(ranked)
 
-        group = rank_players(group, cache)  # usa cache, não recalcula
+    if pairing_result is not None:
+        matches.extend(pairing_result)
+    else:
+        pass 
 
-        if len(group) % 2 == 1:
-            float_down = group.pop()
-
-        matches.extend(pair_group(group))
-
-    if float_down:
-        unpaired.append(float_down)
-
-    if unpaired:
-        bye = assign_bye(unpaired, cache)
-        matches.append((bye, None))
+    if bye_player:
+        matches.append((bye_player, None))
 
     return matches

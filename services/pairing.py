@@ -6,6 +6,8 @@ from services.tiebreakers import OMW, OOMW, SSRL
 def can_play(p1, p2):
     return not p1.has_played(p2)
 
+
+# Points (P) / Oponent's Match Win-rate(OMW) / Oponent's Oponent's Match Win-rate(OOMW) / Sum of the Square of the Round Lost(SSRL)
 def build_tiebreaker(players, tournament):
     #Calcula OMW/OOMW/SSRL uma única vez por player
     return {

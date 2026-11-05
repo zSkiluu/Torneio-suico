@@ -77,7 +77,7 @@ def group_by_score(players):
     return groups
 
 def assign_bye(players, cache):
-    eligible = [p for p in players if not p.had_bye] or players
+    eligible = [p for p in players if not getattr(p, "had_bye", False)] or players
     # menor pontuação leva o bye → ordem crescente, pega [0]
     return sorted(eligible, key=lambda p: cache[p])[0]
 
@@ -123,16 +123,19 @@ def swiss_pairing(tournament):
 
     matches = []
     bye_player = None
+    pairing_pool = ranked
 
     if len(ranked) % 2 == 1:
-        bye_player = assign_bye(ranked)
+        bye_player = assign_bye(ranked, cache)
+        pairing_pool = [p for p in ranked if p != bye_player]
 
-    pairing_result = global_try_pairing(ranked)
+    pairing_result = global_try_pairing(pairing_pool)
 
     if pairing_result is not None:
         matches.extend(pairing_result)
     else:
-        pass 
+        fallback_pairs = pair_group(pairing_pool)
+        matches.extend(fallback_pairs)
 
     if bye_player:
         matches.append((bye_player, None))

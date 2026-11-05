@@ -1,9 +1,12 @@
+from pathlib import Path
+
 from flask import Flask, render_template, request, jsonify
 import random
 
 from models.player import Player
 from models.tournament import Tournament
 from models.match import Match
+from services.event_store import EventStore
 from services.pairing import swiss_pairing
 from services.scoring import apply_match_result
 from services.tiebreakers import OMW, OOMW, SSRL
@@ -11,16 +14,25 @@ from main import print_standings
 
 app = Flask(__name__)
 
+EVENT_STORE_PATH = Path(__file__).with_name("event_store.json")
+event_store = EventStore(EVENT_STORE_PATH)
+
 estado = {
     "tournament": None,
     "total_rounds": 0,
     "current_matches": [],
     "ranking_atual": [],
-    "finalizado": False,
     "historico_rodadas": [],
     "historico_rankings": [],
     "player_snapshot": None,
+    "player_snapshots": [],
+    "finalizado": False,
+    "event_store": event_store,
 }
+
+
+def registrar_evento(event_type, **data):
+    return event_store.append(event_type, data)
 
 
 def snapshot_ranking(t):
@@ -43,7 +55,7 @@ def snapshot_ranking(t):
 
 def salvar_player_snapshot(rodada_num):
     t = estado["tournament"]
-    estado["player_snapshot"] = {
+    snapshot = {
         "rodada": rodada_num,
         "players": [
             {
@@ -56,6 +68,9 @@ def salvar_player_snapshot(rodada_num):
         ],
         "num_rounds_antes": len(t.rounds) - 1,
     }
+    estado["player_snapshot"] = snapshot
+    estado["player_snapshots"].append(snapshot)
+    return snapshot
 
 
 def restaurar_player_snapshot(snap):
@@ -83,19 +98,26 @@ def iniciar_torneio():
     estado["historico_rodadas"] = []
     estado["historico_rankings"] = []
     estado["player_snapshot"] = None
+    estado["player_snapshots"] = []
 
     dados = request.get_json()
-    estado["total_rounds"] = int(dados.get('rounds', 3))
+    try:
+        estado["total_rounds"] = int(dados.get('rounds', 3))
+    except (TypeError, ValueError):
+        return jsonify({"erro": "Número de rodadas deve ser maior que zero"}), 400
+
     nomes = dados.get('names', [])
 
     if not nomes:
         return jsonify({"erro": "Nenhum nome de jogador foi enviado"}), 400
 
-    try:
-        with open('players.txt', 'w', encoding='utf-8') as f:
-            f.writelines(f"{nome}\n" for nome in nomes)
-    except Exception as e:
-        print(f"Erro ao salvar players.txt: {e}")
+    if estado["total_rounds"] <= 0:
+        return jsonify({"erro": "Número de rodadas deve ser maior que zero"}), 400
+
+    if event_store.replay():
+        event_store.clear()
+
+    registrar_evento("tournament_started", total_rounds=estado["total_rounds"], names=nomes)
 
     random.shuffle(nomes)
     players = [Player(i, nome) for i, nome in enumerate(nomes)]
@@ -133,10 +155,17 @@ def proxima_rodada():
         for i, m in enumerate(matches)
     ]
 
+    registrar_evento(
+        "round_started",
+        rodada=rodada_num,
+        pairings=[{"p1": m.p1.name, "p2": m.p2.name if m.p2 else "BYE"} for m in matches],
+        partidas=partidas_json,
+    )
+
     return jsonify({
         "rodada_atual": rodada_num,
         "partidas": partidas_json,
-        "pode_voltar": estado["player_snapshot"] is not None,
+        "pode_voltar": bool(estado.get("player_snapshots")),
     })
 
 
@@ -188,6 +217,16 @@ def enviar_resultados():
     estado["ranking_atual"] = ranking_snap
     estado["finalizado"] = rodada_num >= estado["total_rounds"]
 
+    registrar_evento(
+        "results_applied",
+        rodada=rodada_num,
+        resultados=[
+            {"id": i, "vencedor": (m.p1.name if m.winner == m.p1 else m.p2.name if m.winner == m.p2 else None) if not m.is_bye() else None}
+            for i, m in enumerate(matches)
+        ],
+        ranking=ranking_snap,
+    )
+
     return jsonify({"mensagem": "Resultados aplicados com sucesso"})
 
 
@@ -198,22 +237,33 @@ def voltar_rodada():
     if not t:
         return jsonify({"erro": "Nenhum torneio ativo"}), 400
 
-    if estado["player_snapshot"] is None:
-        return jsonify({"erro": "Não é possível voltar mais de uma rodada seguida"}), 400
+    payload = request.get_json(silent=True) or {}
+    quantidade = int(payload.get("quantidade", 1))
 
-    snap = estado["player_snapshot"]
-    estado["player_snapshot"] = None
-    rodada_revertida = snap["rodada"]
+    if quantidade < 1:
+        return jsonify({"erro": "Quantidade de rodadas para reverter deve ser maior que zero"}), 400
 
-    restaurar_player_snapshot(snap)
+    if len(estado["player_snapshots"]) < quantidade:
+        return jsonify({"erro": "Não há snapshots suficientes para reverter esse número de rodadas"}), 400
 
-    estado["historico_rodadas"] = [r for r in estado["historico_rodadas"] if r["rodada"] != rodada_revertida]
-    estado["historico_rankings"] = [r for r in estado["historico_rankings"] if r["rodada"] != rodada_revertida]
+    rodadas_revertidas = []
+    for _ in range(quantidade):
+        snap = estado["player_snapshots"].pop()
+        rodadas_revertidas.append(snap["rodada"])
+        restaurar_player_snapshot(snap)
+
+        estado["historico_rodadas"] = [r for r in estado["historico_rodadas"] if r["rodada"] != snap["rodada"]]
+        estado["historico_rankings"] = [r for r in estado["historico_rankings"] if r["rodada"] != snap["rodada"]]
+
+    estado["player_snapshot"] = estado["player_snapshots"][-1] if estado["player_snapshots"] else None
     estado["current_matches"] = []
     estado["finalizado"] = False
     estado["ranking_atual"] = snapshot_ranking(t)
 
-    return jsonify({"rodada_atual": len(t.rounds)})
+    for rodada_revertida in rodadas_revertidas:
+        registrar_evento("round_reverted", rodada=rodada_revertida, ranking=estado["ranking_atual"])
+
+    return jsonify({"rodada_atual": len(t.rounds), "revertidas": quantidade})
 
 
 @app.route('/resetar', methods=['POST'])
@@ -227,13 +277,10 @@ def resetar_torneio():
         "historico_rodadas": [],
         "historico_rankings": [],
         "player_snapshot": None,
+        "player_snapshots": [],
     })
 
-    try:
-        open('players.txt', 'w').close()
-    except Exception as e:
-        print(f"Erro ao esvaziar players.txt: {e}")
-
+    event_store.clear()
     return jsonify({"mensagem": "Torneio resetado com sucesso"})
 
 
@@ -259,7 +306,7 @@ def status_torneio():
         "finalizado": estado["finalizado"],
         "rodada_atual": len(t.rounds),
         "total_rounds": estado["total_rounds"],
-        "pode_voltar": estado["player_snapshot"] is not None,
+        "pode_voltar": bool(estado.get("player_snapshots")),
         "partidas": partidas_json,
     })
 

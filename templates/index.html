@@ -113,7 +113,11 @@
 
         <button onclick="enviarResultados()" style="width: 100%; margin-top: 20px;">Salvar Resultados e Avançar</button>
 
-        <!-- Botão Voltar Rodada -->
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 12px;">
+            <label for="revert-count" style="font-weight: 600;">Quantas rodadas voltar:</label>
+            <input id="revert-count" type="number" min="1" value="1" style="width: 80px; padding: 8px; border-radius: 6px; border: 1px solid #ccc;" />
+        </div>
+
         <button id="btn-voltar-rodada" class="btn-voltar" onclick="voltarRodada()" disabled>
             Voltar à Rodada Anterior
         </button>
@@ -353,7 +357,8 @@
 
         async function iniciarTorneio() {
             travarTela();
-            const rounds = document.getElementById('rounds').value;
+            const roundsInput = document.getElementById('rounds');
+            const rounds = Number(roundsInput.value);
             const namesText = document.getElementById('player-names').value;
 
             const namesArray = namesText.split(/\r?\n/)
@@ -362,6 +367,12 @@
 
             if (namesArray.length === 0) {
                 alert("Por favor, insira ao menos um nome de jogador.");
+                return;
+            }
+
+            if (!Number.isInteger(rounds) || rounds <= 0) {
+                alert("Informe um número de rodadas maior que zero.");
+                roundsInput.focus();
                 return;
             }
 
@@ -450,8 +461,14 @@
             btn.disabled = true;
             btn.innerText = "Revertendo...";
 
+            const quantidade = Math.max(1, Number(document.getElementById('revert-count').value || 1));
+
             try {
-                const response = await fetch('/voltar_rodada', { method: 'POST' });
+                const response = await fetch('/voltar_rodada', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ quantidade })
+                });
                 const data = await response.json();
 
                 if (data.erro) {
@@ -463,7 +480,6 @@
 
                 btn.innerHTML = "Voltar à Rodada Anterior";
 
-                // Recarrega os pairings da rodada que foi desfeita
                 await carregarProximaRodada();
 
             } catch (err) {

@@ -1,0 +1,91 @@
+[
+  {
+    "type": "tournament_started",
+    "data": {
+      "total_rounds": 4,
+      "names": [
+        "jose",
+        "zeca",
+        "pets",
+        "leandro",
+        "bisina",
+        "pedrin",
+        "lucas",
+        "alex",
+        "shimizu",
+        "aaa",
+        "bb"
+      ]
+    }
+  },
+  {
+    "type": "round_started",
+    "data": {
+      "rodada": 1,
+      "pairings": [
+        {
+          "p1": "bb",
+          "p2": "aaa"
+        },
+        {
+          "p1": "shimizu",
+          "p2": "lucas"
+        },
+        {
+          "p1": "bisina",
+          "p2": "alex"
+        },
+        {
+          "p1": "zeca",
+          "p2": "leandro"
+        },
+        {
+          "p1": "pedrin",
+          "p2": "pets"
+        },
+        {
+          "p1": "jose",
+          "p2": "BYE"
+        }
+      ],
+      "partidas": [
+        {
+          "id": 0,
+          "p1": "bb",
+          "p2": "aaa",
+          "is_bye": false
+        },
+        {
+          "id": 1,
+          "p1": "shimizu",
+          "p2": "lucas",
+          "is_bye": false
+        },
+        {
+          "id": 2,
+          "p1": "bisina",
+          "p2": "alex",
+          "is_bye": false
+        },
+        {
+          "id": 3,
+          "p1": "zeca",
+          "p2": "leandro",
+          "is_bye": false
+        },
+        {
+          "id": 4,
+          "p1": "pedrin",
+          "p2": "pets",
+          "is_bye": false
+        },
+        {
+          "id": 5,
+          "p1": "jose",
+          "p2": "BYE",
+          "is_bye": true
+        }
+      ]
+    }
+  }
+]

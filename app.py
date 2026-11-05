@@ -62,6 +62,10 @@ def salvar_player_snapshot(rodada_num):
                 "id": p.id,
                 "points": p.points,
                 "opponent_ids": [op.id for op in p.opponents],
+                "matches_played": p.matches_played,
+                "had_bye": getattr(p, "had_bye", False),
+                "results": list(getattr(p, "results", [])),
+                "loss_rounds": list(getattr(p, "loss_rounds", [])),
                 "bye_count": getattr(p, "bye_count", 0),
             }
             for p in t.players
@@ -81,10 +85,17 @@ def restaurar_player_snapshot(snap):
         p = players_by_id[ps["id"]]
         p.points = ps["points"]
         p.opponents = [players_by_id[oid] for oid in ps["opponent_ids"]]
+        p.matches_played = ps.get("matches_played", 0)
+        p.had_bye = ps.get("had_bye", False)
+        if hasattr(p, "results"):
+            p.results = list(ps.get("results", []))
+        if hasattr(p, "loss_rounds"):
+            p.loss_rounds = list(ps.get("loss_rounds", []))
         if hasattr(p, "bye_count"):
-            p.bye_count = ps["bye_count"]
+            p.bye_count = ps.get("bye_count", 0)
 
     t.rounds = t.rounds[: snap["num_rounds_antes"]]
+    t.current_round_number = len(t.rounds)
 
 
 @app.route('/')
@@ -256,6 +267,7 @@ def voltar_rodada():
         estado["historico_rankings"] = [r for r in estado["historico_rankings"] if r["rodada"] != snap["rodada"]]
 
     estado["player_snapshot"] = estado["player_snapshots"][-1] if estado["player_snapshots"] else None
+    t.current_round_number = len(t.rounds)
     estado["current_matches"] = []
     estado["finalizado"] = False
     estado["ranking_atual"] = snapshot_ranking(t)

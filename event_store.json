@@ -12,9 +12,7 @@
         "pedrin",
         "lucas",
         "alex",
-        "shimizu",
-        "aaa",
-        "bb"
+        "shimizu"
       ]
     }
   },
@@ -24,35 +22,31 @@
       "rodada": 1,
       "pairings": [
         {
-          "p1": "bb",
-          "p2": "aaa"
+          "p1": "bisina",
+          "p2": "zeca"
         },
         {
           "p1": "shimizu",
           "p2": "lucas"
         },
         {
-          "p1": "bisina",
+          "p1": "jose",
           "p2": "alex"
         },
         {
-          "p1": "zeca",
-          "p2": "leandro"
-        },
-        {
-          "p1": "pedrin",
+          "p1": "leandro",
           "p2": "pets"
         },
         {
-          "p1": "jose",
+          "p1": "pedrin",
           "p2": "BYE"
         }
       ],
       "partidas": [
         {
           "id": 0,
-          "p1": "bb",
-          "p2": "aaa",
+          "p1": "bisina",
+          "p2": "zeca",
           "is_bye": false
         },
         {
@@ -63,25 +57,871 @@
         },
         {
           "id": 2,
-          "p1": "bisina",
+          "p1": "jose",
           "p2": "alex",
           "is_bye": false
         },
         {
           "id": 3,
-          "p1": "zeca",
-          "p2": "leandro",
+          "p1": "leandro",
+          "p2": "pets",
           "is_bye": false
         },
         {
           "id": 4,
           "p1": "pedrin",
+          "p2": "BYE",
+          "is_bye": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "results_applied",
+    "data": {
+      "rodada": 1,
+      "resultados": [
+        {
+          "id": 0,
+          "vencedor": "bisina"
+        },
+        {
+          "id": 1,
+          "vencedor": "shimizu"
+        },
+        {
+          "id": 2,
+          "vencedor": "jose"
+        },
+        {
+          "id": 3,
+          "vencedor": "leandro"
+        },
+        {
+          "id": 4,
+          "vencedor": null
+        }
+      ],
+      "ranking": [
+        {
+          "nome": "bisina",
+          "pontos": 3,
+          "omw": 0.33,
+          "oomw": 1.0,
+          "ssrl": 0
+        },
+        {
+          "nome": "shimizu",
+          "pontos": 3,
+          "omw": 0.33,
+          "oomw": 1.0,
+          "ssrl": 0
+        },
+        {
+          "nome": "jose",
+          "pontos": 3,
+          "omw": 0.33,
+          "oomw": 1.0,
+          "ssrl": 0
+        },
+        {
+          "nome": "leandro",
+          "pontos": 3,
+          "omw": 0.33,
+          "oomw": 1.0,
+          "ssrl": 0
+        },
+        {
+          "nome": "pedrin",
+          "pontos": 3,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "zeca",
+          "pontos": 0,
+          "omw": 1.0,
+          "oomw": 0.33,
+          "ssrl": 1
+        },
+        {
+          "nome": "lucas",
+          "pontos": 0,
+          "omw": 1.0,
+          "oomw": 0.33,
+          "ssrl": 1
+        },
+        {
+          "nome": "alex",
+          "pontos": 0,
+          "omw": 1.0,
+          "oomw": 0.33,
+          "ssrl": 1
+        },
+        {
+          "nome": "pets",
+          "pontos": 0,
+          "omw": 1.0,
+          "oomw": 0.33,
+          "ssrl": 1
+        }
+      ]
+    }
+  },
+  {
+    "type": "round_started",
+    "data": {
+      "rodada": 2,
+      "pairings": [
+        {
+          "p1": "bisina",
+          "p2": "shimizu"
+        },
+        {
+          "p1": "jose",
+          "p2": "leandro"
+        },
+        {
+          "p1": "pedrin",
+          "p2": "lucas"
+        },
+        {
+          "p1": "alex",
+          "p2": "pets"
+        },
+        {
+          "p1": "zeca",
+          "p2": "BYE"
+        }
+      ],
+      "partidas": [
+        {
+          "id": 0,
+          "p1": "bisina",
+          "p2": "shimizu",
+          "is_bye": false
+        },
+        {
+          "id": 1,
+          "p1": "jose",
+          "p2": "leandro",
+          "is_bye": false
+        },
+        {
+          "id": 2,
+          "p1": "pedrin",
+          "p2": "lucas",
+          "is_bye": false
+        },
+        {
+          "id": 3,
+          "p1": "alex",
           "p2": "pets",
           "is_bye": false
         },
         {
-          "id": 5,
+          "id": 4,
+          "p1": "zeca",
+          "p2": "BYE",
+          "is_bye": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "round_reverted",
+    "data": {
+      "rodada": 1,
+      "ranking": [
+        {
+          "nome": "pedrin",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "bisina",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "zeca",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "shimizu",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "lucas",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "jose",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "alex",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "leandro",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "pets",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        }
+      ]
+    }
+  },
+  {
+    "type": "round_started",
+    "data": {
+      "rodada": 1,
+      "pairings": [
+        {
+          "p1": "bisina",
+          "p2": "zeca"
+        },
+        {
+          "p1": "shimizu",
+          "p2": "lucas"
+        },
+        {
           "p1": "jose",
+          "p2": "alex"
+        },
+        {
+          "p1": "leandro",
+          "p2": "pets"
+        },
+        {
+          "p1": "pedrin",
+          "p2": "BYE"
+        }
+      ],
+      "partidas": [
+        {
+          "id": 0,
+          "p1": "bisina",
+          "p2": "zeca",
+          "is_bye": false
+        },
+        {
+          "id": 1,
+          "p1": "shimizu",
+          "p2": "lucas",
+          "is_bye": false
+        },
+        {
+          "id": 2,
+          "p1": "jose",
+          "p2": "alex",
+          "is_bye": false
+        },
+        {
+          "id": 3,
+          "p1": "leandro",
+          "p2": "pets",
+          "is_bye": false
+        },
+        {
+          "id": 4,
+          "p1": "pedrin",
+          "p2": "BYE",
+          "is_bye": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "results_applied",
+    "data": {
+      "rodada": 1,
+      "resultados": [
+        {
+          "id": 0,
+          "vencedor": "bisina"
+        },
+        {
+          "id": 1,
+          "vencedor": "shimizu"
+        },
+        {
+          "id": 2,
+          "vencedor": "jose"
+        },
+        {
+          "id": 3,
+          "vencedor": "leandro"
+        },
+        {
+          "id": 4,
+          "vencedor": null
+        }
+      ],
+      "ranking": [
+        {
+          "nome": "bisina",
+          "pontos": 3,
+          "omw": 0.33,
+          "oomw": 1.0,
+          "ssrl": 0
+        },
+        {
+          "nome": "shimizu",
+          "pontos": 3,
+          "omw": 0.33,
+          "oomw": 1.0,
+          "ssrl": 0
+        },
+        {
+          "nome": "jose",
+          "pontos": 3,
+          "omw": 0.33,
+          "oomw": 1.0,
+          "ssrl": 0
+        },
+        {
+          "nome": "leandro",
+          "pontos": 3,
+          "omw": 0.33,
+          "oomw": 1.0,
+          "ssrl": 0
+        },
+        {
+          "nome": "pedrin",
+          "pontos": 3,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "zeca",
+          "pontos": 0,
+          "omw": 1.0,
+          "oomw": 0.33,
+          "ssrl": 1
+        },
+        {
+          "nome": "lucas",
+          "pontos": 0,
+          "omw": 1.0,
+          "oomw": 0.33,
+          "ssrl": 1
+        },
+        {
+          "nome": "alex",
+          "pontos": 0,
+          "omw": 1.0,
+          "oomw": 0.33,
+          "ssrl": 1
+        },
+        {
+          "nome": "pets",
+          "pontos": 0,
+          "omw": 1.0,
+          "oomw": 0.33,
+          "ssrl": 1
+        }
+      ]
+    }
+  },
+  {
+    "type": "round_started",
+    "data": {
+      "rodada": 2,
+      "pairings": [
+        {
+          "p1": "bisina",
+          "p2": "shimizu"
+        },
+        {
+          "p1": "jose",
+          "p2": "leandro"
+        },
+        {
+          "p1": "pedrin",
+          "p2": "lucas"
+        },
+        {
+          "p1": "alex",
+          "p2": "pets"
+        },
+        {
+          "p1": "zeca",
+          "p2": "BYE"
+        }
+      ],
+      "partidas": [
+        {
+          "id": 0,
+          "p1": "bisina",
+          "p2": "shimizu",
+          "is_bye": false
+        },
+        {
+          "id": 1,
+          "p1": "jose",
+          "p2": "leandro",
+          "is_bye": false
+        },
+        {
+          "id": 2,
+          "p1": "pedrin",
+          "p2": "lucas",
+          "is_bye": false
+        },
+        {
+          "id": 3,
+          "p1": "alex",
+          "p2": "pets",
+          "is_bye": false
+        },
+        {
+          "id": 4,
+          "p1": "zeca",
+          "p2": "BYE",
+          "is_bye": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "results_applied",
+    "data": {
+      "rodada": 2,
+      "resultados": [
+        {
+          "id": 0,
+          "vencedor": "bisina"
+        },
+        {
+          "id": 1,
+          "vencedor": "jose"
+        },
+        {
+          "id": 2,
+          "vencedor": "pedrin"
+        },
+        {
+          "id": 3,
+          "vencedor": "alex"
+        },
+        {
+          "id": 4,
+          "vencedor": null
+        }
+      ],
+      "ranking": [
+        {
+          "nome": "bisina",
+          "pontos": 6,
+          "omw": 0.5,
+          "oomw": 0.83,
+          "ssrl": 0
+        },
+        {
+          "nome": "jose",
+          "pontos": 6,
+          "omw": 0.5,
+          "oomw": 0.67,
+          "ssrl": 0
+        },
+        {
+          "nome": "pedrin",
+          "pontos": 6,
+          "omw": 0.33,
+          "oomw": 0.75,
+          "ssrl": 0
+        },
+        {
+          "nome": "zeca",
+          "pontos": 3,
+          "omw": 1.0,
+          "oomw": 0.5,
+          "ssrl": 1
+        },
+        {
+          "nome": "shimizu",
+          "pontos": 3,
+          "omw": 0.67,
+          "oomw": 0.62,
+          "ssrl": 4
+        },
+        {
+          "nome": "leandro",
+          "pontos": 3,
+          "omw": 0.67,
+          "oomw": 0.5,
+          "ssrl": 4
+        },
+        {
+          "nome": "alex",
+          "pontos": 3,
+          "omw": 0.67,
+          "oomw": 0.5,
+          "ssrl": 1
+        },
+        {
+          "nome": "lucas",
+          "pontos": 0,
+          "omw": 0.75,
+          "oomw": 0.5,
+          "ssrl": 5
+        },
+        {
+          "nome": "pets",
+          "pontos": 0,
+          "omw": 0.5,
+          "oomw": 0.67,
+          "ssrl": 5
+        }
+      ]
+    }
+  },
+  {
+    "type": "round_started",
+    "data": {
+      "rodada": 3,
+      "pairings": [
+        {
+          "p1": "bisina",
+          "p2": "jose"
+        },
+        {
+          "p1": "pedrin",
+          "p2": "zeca"
+        },
+        {
+          "p1": "shimizu",
+          "p2": "leandro"
+        },
+        {
+          "p1": "alex",
+          "p2": "lucas"
+        },
+        {
+          "p1": "pets",
+          "p2": "BYE"
+        }
+      ],
+      "partidas": [
+        {
+          "id": 0,
+          "p1": "bisina",
+          "p2": "jose",
+          "is_bye": false
+        },
+        {
+          "id": 1,
+          "p1": "pedrin",
+          "p2": "zeca",
+          "is_bye": false
+        },
+        {
+          "id": 2,
+          "p1": "shimizu",
+          "p2": "leandro",
+          "is_bye": false
+        },
+        {
+          "id": 3,
+          "p1": "alex",
+          "p2": "lucas",
+          "is_bye": false
+        },
+        {
+          "id": 4,
+          "p1": "pets",
+          "p2": "BYE",
+          "is_bye": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "round_reverted",
+    "data": {
+      "rodada": 2,
+      "ranking": [
+        {
+          "nome": "bisina",
+          "pontos": 3,
+          "omw": 0.33,
+          "oomw": 1.0,
+          "ssrl": 0
+        },
+        {
+          "nome": "shimizu",
+          "pontos": 3,
+          "omw": 0.33,
+          "oomw": 1.0,
+          "ssrl": 0
+        },
+        {
+          "nome": "jose",
+          "pontos": 3,
+          "omw": 0.33,
+          "oomw": 1.0,
+          "ssrl": 0
+        },
+        {
+          "nome": "leandro",
+          "pontos": 3,
+          "omw": 0.33,
+          "oomw": 1.0,
+          "ssrl": 0
+        },
+        {
+          "nome": "pedrin",
+          "pontos": 3,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "zeca",
+          "pontos": 0,
+          "omw": 1.0,
+          "oomw": 0.33,
+          "ssrl": 1
+        },
+        {
+          "nome": "lucas",
+          "pontos": 0,
+          "omw": 1.0,
+          "oomw": 0.33,
+          "ssrl": 1
+        },
+        {
+          "nome": "alex",
+          "pontos": 0,
+          "omw": 1.0,
+          "oomw": 0.33,
+          "ssrl": 1
+        },
+        {
+          "nome": "pets",
+          "pontos": 0,
+          "omw": 1.0,
+          "oomw": 0.33,
+          "ssrl": 1
+        }
+      ]
+    }
+  },
+  {
+    "type": "round_started",
+    "data": {
+      "rodada": 2,
+      "pairings": [
+        {
+          "p1": "bisina",
+          "p2": "shimizu"
+        },
+        {
+          "p1": "jose",
+          "p2": "leandro"
+        },
+        {
+          "p1": "pedrin",
+          "p2": "lucas"
+        },
+        {
+          "p1": "alex",
+          "p2": "pets"
+        },
+        {
+          "p1": "zeca",
+          "p2": "BYE"
+        }
+      ],
+      "partidas": [
+        {
+          "id": 0,
+          "p1": "bisina",
+          "p2": "shimizu",
+          "is_bye": false
+        },
+        {
+          "id": 1,
+          "p1": "jose",
+          "p2": "leandro",
+          "is_bye": false
+        },
+        {
+          "id": 2,
+          "p1": "pedrin",
+          "p2": "lucas",
+          "is_bye": false
+        },
+        {
+          "id": 3,
+          "p1": "alex",
+          "p2": "pets",
+          "is_bye": false
+        },
+        {
+          "id": 4,
+          "p1": "zeca",
+          "p2": "BYE",
+          "is_bye": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "round_reverted",
+    "data": {
+      "rodada": 1,
+      "ranking": [
+        {
+          "nome": "pedrin",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "bisina",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "zeca",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "shimizu",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "lucas",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "jose",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "alex",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "leandro",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        },
+        {
+          "nome": "pets",
+          "pontos": 0,
+          "omw": 0,
+          "oomw": 0,
+          "ssrl": 0
+        }
+      ]
+    }
+  },
+  {
+    "type": "round_started",
+    "data": {
+      "rodada": 1,
+      "pairings": [
+        {
+          "p1": "bisina",
+          "p2": "zeca"
+        },
+        {
+          "p1": "shimizu",
+          "p2": "lucas"
+        },
+        {
+          "p1": "jose",
+          "p2": "alex"
+        },
+        {
+          "p1": "leandro",
+          "p2": "pets"
+        },
+        {
+          "p1": "pedrin",
+          "p2": "BYE"
+        }
+      ],
+      "partidas": [
+        {
+          "id": 0,
+          "p1": "bisina",
+          "p2": "zeca",
+          "is_bye": false
+        },
+        {
+          "id": 1,
+          "p1": "shimizu",
+          "p2": "lucas",
+          "is_bye": false
+        },
+        {
+          "id": 2,
+          "p1": "jose",
+          "p2": "alex",
+          "is_bye": false
+        },
+        {
+          "id": 3,
+          "p1": "leandro",
+          "p2": "pets",
+          "is_bye": false
+        },
+        {
+          "id": 4,
+          "p1": "pedrin",
           "p2": "BYE",
           "is_bye": true
         }
